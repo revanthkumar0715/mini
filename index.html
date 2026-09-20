@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IoT Coal Mine Safety Monitoring & Alert System</title>
+  <!-- Google Fonts & FontAwesome -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-dark text-slate">
+
+  <!-- TOP HEADER -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-box">
+        <i class="fa-solid fa-helmet-safety logo-icon"></i>
+      </div>
+      <div>
+        <h1 class="app-title">MINEGUARD <span class="badge-iot">IoT SAFE-360</span></h1>
+        <p class="app-subtitle">Underground Coal Mine Environmental Monitoring & Emergency Alert Command</p>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <div id="system-status-banner" class="status-banner status-normal">
+        <span class="status-indicator-dot"></span>
+        <span id="system-status-text">MINE ENVIRONMENT SAFE</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="live-clock-box">
+        <i class="fa-regular fa-clock"></i>
+        <span id="live-clock">10:51:00 AM</span>
+      </div>
+      
+      <button id="siren-toggle-btn" class="btn btn-icon btn-sound" title="Toggle Emergency Siren Sound">
+        <i class="fa-solid fa-volume-high" id="siren-icon"></i>
+        <span id="siren-btn-text">Audio Alarm</span>
+      </button>
+
+      <button id="hardware-code-btn" class="btn btn-secondary">
+        <i class="fa-solid fa-microchip"></i> ESP32 Hardware Guide
+      </button>
+
+      <button id="evacuate-all-btn" class="btn btn-danger btn-pulse">
+        <i class="fa-solid fa-triangle-exclamation"></i> EVACUATE MINE
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="dashboard-grid">
+
+    <!-- TELEMETRY CARDS SECTION -->
+    <section class="telemetry-row">
+      
+      <!-- METHANE CARD -->
+      <div class="metric-card" id="card-ch4">
+        <div class="card-header">
+          <span class="metric-label"><i class="fa-solid fa-fire-flame-curved text-warning"></i> Methane Gas (CH₄)</span>
+          <span class="badge-threshold" id="ch4-status">NORMAL</span>
+        </div>
+        <div class="card-body">
+          <div class="metric-value-group">
+            <span class="metric-number" id="val-ch4">0.45</span>
+            <span class="metric-unit">% LEL</span>
+          </div>
+          <div class="metric-subtext"><span id="val-ch4-ppm">2250</span> ppm</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-normal" id="bar-ch4" style="width: 15%;"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>Threshold Limit: 1.25% LEL</span>
+          <i class="fa-solid fa-circle-info" title="Methane above 1.25% triggers fan boost; above 2.0% requires immediate evacuation"></i>
+        </div>
+      </div>
+
+      <!-- CARBON MONOXIDE CARD -->
+      <div class="metric-card" id="card-co">
+        <div class="card-header">
+          <span class="metric-label"><i class="fa-solid fa-smog text-danger"></i> Carbon Monoxide (CO)</span>
+          <span class="badge-threshold" id="co-status">NORMAL</span>
+        </div>
+        <div class="card-body">
+          <div class="metric-value-group">
+            <span class="metric-number" id="val-co">12</span>
+            <span class="metric-unit">ppm</span>
+          </div>
+          <div class="metric-subtext">Toxic Gas Index: <strong id="val-co-level">Low</strong></div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-normal" id="bar-co" style="width: 12%;"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>Max Safe Exposure: 50 ppm</span>
+          <i class="fa-solid fa-circle-info" title="CO spikes indicate coal spontaneous combustion or fires"></i>
+        </div>
+      </div>
+
+      <!-- OXYGEN CARD -->
+      <div class="metric-card" id="card-o2">
+        <div class="card-header">
+          <span class="metric-label"><i class="fa-solid fa-wind text-info"></i> Oxygen (O₂) Level</span>
+          <span class="badge-threshold" id="o2-status">OPTIMAL</span>
+        </div>
+        <div class="card-body">
+          <div class="metric-value-group">
+            <span class="metric-number" id="val-o2">20.9</span>
+            <span class="metric-unit">% Vol</span>
+          </div>
+          <div class="metric-subtext">Safe Range: 19.5% - 23.5%</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-normal" id="bar-o2" style="width: 85%;"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>Min Safe Limit: 19.5%</span>
+          <i class="fa-solid fa-circle-info" title="O2 levels below 19.5% present asphyxiation danger"></i>
+        </div>
+      </div>
+
+      <!-- TEMPERATURE & HUMIDITY -->
+      <div class="metric-card" id="card-temp">
+        <div class="card-header">
+          <span class="metric-label"><i class="fa-solid fa-temperature-three-quarters text-orange"></i> Shaft Temp & Humidity</span>
+          <span class="badge-threshold" id="temp-status">NORMAL</span>
+        </div>
+        <div class="card-body">
+          <div class="dual-metric">
+            <div>
+              <span class="metric-number" id="val-temp">24.2</span>
+              <span class="metric-unit">°C</span>
+            </div>
+            <div class="divider-v"></div>
+            <div>
+              <span class="metric-number" id="val-humidity">62</span>
+              <span class="metric-unit">% RH</span>
+            </div>
+          </div>
+          <div class="progress-bar-bg" style="margin-top: 14px;">
+            <div class="progress-bar-fill fill-normal" id="bar-temp" style="width: 48%;"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>Max Temp Alert: 38.0°C</span>
+          <i class="fa-solid fa-circle-info" title="High heat combined with humidity increases heat stroke & fire risk"></i>
+        </div>
+      </div>
+
+      <!-- VENTILATION FAN & AIRFLOW -->
+      <div class="metric-card" id="card-fan">
+        <div class="card-header">
+          <span class="metric-label"><i class="fa-solid fa-fan text-cyan" id="fan-icon"></i> Exhaust Ventilation Fan</span>
+          <span class="badge-threshold badge-active" id="fan-status">AUTO: NORMAL</span>
+        </div>
+        <div class="card-body">
+          <div class="metric-value-group">
+            <span class="metric-number" id="val-fan-rpm">1800</span>
+            <span class="metric-unit">RPM</span>
+          </div>
+          <div class="metric-subtext">Air Velocity: <span id="val-airflow">4.2</span> m/s</div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill fill-normal" id="bar-fan" style="width: 60%;"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <button class="btn-xs btn-outline" id="toggle-fan-btn">Override Fan Boost</button>
+          <span>Auto-Purge Ready</span>
+        </div>
+      </div>
+
+      <!-- MINER SAFETY & FALL DETECTION -->
+      <div class="metric-card" id="card-miners">
+        <div class="card-header">
+          <span class="metric-label"><i class="fa-solid fa-user-shield text-emerald"></i> Active Miner Safety Tracker</span>
+          <span class="badge-threshold" id="miner-status">ALL CLEAR</span>
+        </div>
+        <div class="card-body">
+          <div class="dual-metric">
+            <div>
+              <span class="metric-number" id="val-active-miners">8</span>
+              <span class="metric-unit">Active</span>
+            </div>
+            <div class="divider-v"></div>
+            <div>
+              <span class="metric-number text-danger" id="val-fall-count">0</span>
+              <span class="metric-unit">SOS / Fall</span>
+            </div>
+          </div>
+          <div class="progress-bar-bg" style="margin-top: 14px;">
+            <div class="progress-bar-fill fill-normal" id="bar-miners" style="width: 100%;"></div>
+          </div>
+        </div>
+        <div class="card-footer">
+          <span>LoRa RF Beacon Tracking</span>
+          <i class="fa-solid fa-signal text-success"></i>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- MIDDLE SECTION: MAP & SIMULATION CONTROLS -->
+    <section class="middle-layout">
+
+      <!-- LEFT: VISUAL UNDERGROUND MINE MAP -->
+      <div class="panel mine-map-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="fa-solid fa-map-location-dot"></i> Underground Mine Shaft Topology & LoRa Mesh Network
+          </div>
+          <div class="map-controls">
+            <span class="legend-item"><span class="legend-dot safe"></span> Safe Zone</span>
+            <span class="legend-item"><span class="legend-dot warning"></span> Warning</span>
+            <span class="legend-item"><span class="legend-dot danger"></span> Danger</span>
+            <span class="legend-item"><span class="legend-dot miner"></span> Miner Location</span>
+          </div>
+        </div>
+        <div class="panel-body map-container">
+          <canvas id="mine-canvas"></canvas>
+          <div class="map-overlay-info" id="zone-hover-card">
+            <h4>Zone A: Deep Shaft Extraction</h4>
+            <p>CH₄: <span id="map-ch4">0.45%</span> | CO: <span id="map-co">12 ppm</span></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: SIMULATION SCENARIOS & CONTROL PANEL -->
+      <div class="panel simulator-panel">
+        <div class="panel-header">
+          <div class="panel-title">
+            <i class="fa-solid fa-sliders"></i> IoT Sensor Simulator & Scenario Testing
+          </div>
+          <span class="badge-iot">Testing Suite</span>
+        </div>
+
+        <div class="panel-body simulator-body">
+          
+          <div class="preset-section">
+            <label class="section-label">Quick Scenario Presets</label>
+            <div class="preset-grid">
+              <button class="preset-btn active" id="preset-normal">
+                <i class="fa-solid fa-circle-check text-success"></i> Normal Operation
+              </button>
+              <button class="preset-btn" id="preset-methane">
+                <i class="fa-solid fa-explosion text-warning"></i> Methane Gas Spike
+              </button>
+              <button class="preset-btn" id="preset-fire">
+                <i class="fa-solid fa-fire text-danger"></i> Fire & CO Poisoning
+              </button>
+              <button class="preset-btn" id="preset-collapse">
+                <i class="fa-solid fa-person-falling-burst text-danger"></i> Miner Collapse / SOS
+              </button>
+              <button class="preset-btn" id="preset-fan-fail">
+                <i class="fa-solid fa-ban text-info"></i> Ventilation Failure
+              </button>
+            </div>
+          </div>
+
+          <hr class="panel-divider" />
+
+          <!-- MANUAL SLIDERS -->
+          <div class="sliders-section">
+            <label class="section-label">Manual Telemetry Adjusters</label>
+            
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Methane (CH₄) Level (% LEL):</span>
+                <span id="sim-ch4-val" class="mono-val">0.45%</span>
+              </div>
+              <input type="range" id="sim-ch4" min="0" max="3.5" step="0.05" value="0.45" class="slider slider-warning">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Carbon Monoxide (CO ppm):</span>
+                <span id="sim-co-val" class="mono-val">12 ppm</span>
+              </div>
+              <input type="range" id="sim-co" min="0" max="250" step="1" value="12" class="slider slider-danger">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Oxygen Level (O₂ %):</span>
+                <span id="sim-o2-val" class="mono-val">20.9%</span>
+              </div>
+              <input type="range" id="sim-o2" min="14.0" max="23.5" step="0.1" value="20.9" class="slider slider-info">
+            </div>
+
+            <div class="slider-group">
+              <div class="slider-header">
+                <span>Shaft Temperature (°C):</span>
+                <span id="sim-temp-val" class="mono-val">24.2°C</span>
+              </div>
+              <input type="range" id="sim-temp" min="15" max="55" step="0.5" value="24.2" class="slider slider-orange">
+            </div>
+
+            <div class="slider-group flex-between">
+              <span>Trigger Miner SOS / Fall Alert (MPU6050 Accelerometer):</span>
+              <button id="trigger-fall-btn" class="btn btn-warning btn-sm">
+                <i class="fa-solid fa-person-falling"></i> Trigger Fall Emergency
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+    </section>
+
+    <!-- BOTTOM SECTION: LIVE INCIDENT & SAFETY LOG -->
+    <section class="panel log-panel">
+      <div class="panel-header">
+        <div class="panel-title">
+          <i class="fa-solid fa-list-check"></i> Chronological Safety Incident & Telemetry Log
+        </div>
+        <div class="log-actions">
+          <button id="clear-logs-btn" class="btn btn-xs btn-outline">Clear Logs</button>
+          <button id="export-csv-btn" class="btn btn-xs btn-emerald">
+            <i class="fa-solid fa-file-csv"></i> Download CSV Log
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-body log-container">
+        <table class="log-table">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Sensor Node</th>
+              <th>Parameter</th>
+              <th>Observed Value</th>
+              <th>Safety Status</th>
+              <th>Automated System Action</th>
+            </tr>
+          </thead>
+          <tbody id="log-table-body">
+            <!-- Dynamic Log Items -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ESP32 HARDWARE & CODE MODAL -->
+  <div id="hardware-modal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-microchip text-primary"></i> ESP32 IoT Mine Node Hardware & Firmware Reference</h3>
+        <button id="close-modal-btn" class="modal-close">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        
+        <div class="hardware-info-grid">
+          <div class="hw-box">
+            <h4><i class="fa-solid fa-microchip"></i> Hardware Components</h4>
+            <ul>
+              <li><strong>Microcontroller:</strong> ESP32-WROOM-32 (Dual Core 240MHz, Wi-Fi/Bluetooth)</li>
+              <li><strong>Methane Gas Sensor:</strong> MQ-4 Gas Sensor (Analog Pin A0 / GPIO 34)</li>
+              <li><strong>Carbon Monoxide Sensor:</strong> MQ-7 Gas Sensor (Analog Pin A1 / GPIO 35)</li>
+              <li><strong>Temperature/Humidity:</strong> DHT22 Sensor (Digital GPIO 4)</li>
+              <li><strong>Fall/Motion Sensor:</strong> MPU6050 6-Axis Accelerometer (I2C SDA:21, SCL:22)</li>
+              <li><strong>Long Range Comms:</strong> SX1276 LoRa Transceiver (868/915MHz SPI)</li>
+              <li><strong>Actuators & Alerts:</strong> 5V Relay (Exhaust Fan GPIO 26), Active Piezo Siren (GPIO 27)</li>
+            </ul>
+          </div>
+          
+          <div class="hw-box">
+            <h4><i class="fa-solid fa-diagram-project"></i> System Architecture</h4>
+            <p class="text-sm">The underground node reads analog/digital signals every 1000ms. If gas thresholds or fall acceleration ($>3.5g$) are breached, local relay and siren actuate instantly before broadcasting telemetry via LoRa mesh network to the surface gateway dashboard.</p>
+          </div>
+        </div>
+
+        <div class="code-container">
+          <div class="code-header">
+            <span>esp32_coal_mine_safety_node.ino (Arduino C++)</span>
+            <button id="copy-code-btn" class="btn btn-xs btn-secondary">
+              <i class="fa-regular fa-copy"></i> Copy C++ Code
+            </button>
+          </div>
+          <pre><code id="hardware-code-block" class="language-cpp"></code></pre>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
